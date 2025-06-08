@@ -15,7 +15,12 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d typeorm.config.ts",
+    "migration:create": "typeorm-ts-node-commonjs migration:create",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d typeorm.config.ts",
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d typeorm.config.ts",
+    "migration:show": "typeorm-ts-node-commonjs migration:show -d typeorm.config.ts"
   },
   "dependencies": {
     "@nestjs/bull": "^10.1.1",
@@ -27,11 +32,13 @@
     "@nestjs/platform-express": "^10.3.10",
     "@nestjs/swagger": "^7.4.0",
     "@nestjs/typeorm": "^10.0.2",
+    "@types/nodemailer": "^6.4.17",
     "bcrypt": "^5.1.1",
     "bull": "^4.16.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "ioredis": "^5.4.1",
+    "nodemailer": "^7.0.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
@@ -59,7 +66,11 @@
     "tsconfig-paths": "^4.2.0"
   },
   "jest": {
-    "moduleFileExtensions": ["js", "json", "ts"],
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {

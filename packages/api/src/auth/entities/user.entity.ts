@@ -1,6 +1,7 @@
-import { Entity, Column, Index, OneToMany } from 'typeorm';
+import { Entity, Column, Index, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from '../../database/entities/base.entity';
 import { RefreshToken } from './refresh-token.entity';
+import { Tenant } from '../../database/entities/tenant.entity';
 
 export enum UserRole {
   SUPER_ADMIN = 'super_admin',
@@ -63,9 +64,13 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   lastLoginIp?: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   @Index()
   tenantId?: string;
+
+  @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'tenantId' })
+  tenant?: Tenant;
 
   @OneToMany(() => RefreshToken, (token) => token.user)
   refreshTokens: RefreshToken[];

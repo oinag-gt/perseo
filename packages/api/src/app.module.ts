@@ -1,10 +1,12 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
 import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
+import { EmailModule } from './email/email.module';
 import configuration from './config/configuration';
+import { TenantMiddleware } from './database/tenant.middleware';
 
 @Module({
   imports: [
@@ -24,8 +26,10 @@ import configuration from './config/configuration';
         password: configService.get('database.password'),
         database: configService.get('database.name'),
         autoLoadEntities: true,
-        synchronize: configService.get('NODE_ENV') === 'development',
+        synchronize: false, // We'll use migrations instead
         logging: configService.get('NODE_ENV') === 'development',
+        migrations: [__dirname + '/migrations/*{.ts,.js}'],
+        migrationsRun: true, // Run migrations automatically in development
       }),
     }),
     BullModule.forRootAsync({
@@ -40,7 +44,14 @@ import configuration from './config/configuration';
       }),
     }),
     DatabaseModule,
+    EmailModule,
     AuthModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(TenantMiddleware)
+      .forRoutes('*');
+  }
+}
