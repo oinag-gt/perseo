@@ -465,7 +465,7 @@ interface ModuleAccess {
 ```
 
 #### API Features
-- JSON:API or REST with consistent structure
+- JSON:API
 - Pagination, filtering, and sorting
 - Field selection for bandwidth optimization
 - Webhook support for integrations
@@ -473,13 +473,13 @@ interface ModuleAccess {
 
 ## Technology Stack Recommendation
 
-### Primary Recommendation: Node.js Ecosystem
+### Selected Choice: Node.js Ecosystem
 
 #### Backend
 - **Runtime**: Node.js 20 LTS
 - **Framework**: NestJS (enterprise-grade architecture)
 - **Language**: TypeScript (type safety)
-- **ORM**: Prisma or TypeORM
+- **ORM**: TypeORM
 - **Database**: PostgreSQL 15+
 - **Cache**: Redis
 - **Queue**: Bull (Redis-based)
@@ -500,14 +500,6 @@ interface ModuleAccess {
 - **CI/CD**: GitHub Actions
 - **Hosting**: Vercel (frontend) + Railway/Render (backend)
 
-### Alternative Stack: Python/Django
-
-If you prefer a more traditional, battery-included approach:
-- **Backend**: Django 4.2 LTS + Django REST Framework
-- **Frontend**: React or Vue.js
-- **Database**: PostgreSQL with django-tenants
-- **Task Queue**: Celery + Redis
-- **Admin**: Django Admin (huge time saver)
 
 ## Development Roadmap
 
@@ -564,4 +556,4 @@ If you prefer a more traditional, battery-included approach:
 2. **Availability**: 99.9% uptime SLA
 3. **Security**: Zero data breaches
 4. **User Satisfaction**: NPS score > 50
-5. **Scalability**: Support 1000+ concurrent users per tenant
+5. **Scalability**: Support 100+ concurrent users per tenant
