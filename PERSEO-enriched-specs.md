@@ -397,17 +397,38 @@ interface Tenant {
 
 ### User Management & Authorization
 
+#### Authentication Strategy
+- **Phase 1**: Custom JWT implementation using bcrypt for password hashing
+- **Phase 2**: Migration path to Azure AD B2C when enterprise features needed (SSO, social logins)
+
 #### User Model
 ```typescript
 interface User {
   id: UUID;
   email: string;
-  passwordHash: string;
+  passwordHash: string; // bcrypt hashed
   personId?: UUID; // Link to person if applicable
   tenants: TenantAccess[];
   mfaEnabled: boolean;
+  mfaSecret?: string; // For TOTP-based 2FA
+  refreshTokens: RefreshToken[]; // Track active sessions
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
+  emailVerified: boolean;
+  emailVerificationToken?: string;
   lastLoginAt?: Date;
+  failedLoginAttempts: number;
+  lockoutUntil?: Date;
   isActive: boolean;
+}
+
+interface RefreshToken {
+  id: UUID;
+  token: string;
+  expiresAt: Date;
+  createdAt: Date;
+  userAgent?: string;
+  ipAddress?: string;
 }
 
 interface TenantAccess {
@@ -492,13 +513,19 @@ interface ModuleAccess {
 - **Forms**: React Hook Form + Zod
 - **Tables**: TanStack Table
 
-#### Infrastructure
-- **Authentication**: Auth0 or Supabase Auth
-- **File Storage**: S3-compatible (AWS S3, MinIO)
-- **Email**: SendGrid or Amazon SES
-- **Monitoring**: Sentry + Grafana
-- **CI/CD**: GitHub Actions
-- **Hosting**: Vercel (frontend) + Railway/Render (backend)
+#### Infrastructure (Azure-based)
+- **Authentication**: Custom JWT implementation with bcrypt (migration path to Azure AD B2C)
+- **File Storage**: Azure Blob Storage
+- **Email**: Azure Communication Services or SendGrid
+- **Monitoring**: Azure Application Insights + Grafana
+- **CI/CD**: GitHub Actions with Azure DevOps integration
+- **Hosting**: 
+  - Frontend: Azure Static Web Apps
+  - Backend: Azure App Service or Azure Container Instances
+  - Database: Azure Database for PostgreSQL
+  - Cache: Azure Cache for Redis
+- **CDN**: Azure CDN
+- **Secrets Management**: Azure Key Vault
 
 
 ## Development Roadmap
@@ -533,22 +560,38 @@ interface ModuleAccess {
 ## Security Considerations
 
 1. **Data Isolation**: Strict tenant separation at database level
-2. **Encryption**: Data at rest and in transit
-3. **Authentication**: JWT with refresh tokens, optional MFA
+2. **Encryption**: 
+   - Data at rest: Azure Transparent Data Encryption
+   - Data in transit: TLS 1.3
+   - Sensitive fields: Additional application-level encryption
+3. **Authentication**: 
+   - Custom JWT implementation with secure refresh token rotation
+   - bcrypt with cost factor 12 for password hashing
+   - Account lockout after 5 failed attempts
+   - Optional TOTP-based MFA
 4. **Authorization**: Fine-grained permissions per module
-5. **Audit Logging**: All data modifications tracked
+5. **Audit Logging**: All data modifications tracked in Azure Table Storage
 6. **GDPR Compliance**: Data export, right to be forgotten
 7. **Regular Security Audits**: Penetration testing
-8. **Backup Strategy**: Daily automated backups with point-in-time recovery
+8. **Backup Strategy**: 
+   - Azure Backup for database (daily with 30-day retention)
+   - Geo-redundant storage for critical data
+   - Point-in-time recovery capability
 
 ## Scalability Considerations
 
-1. **Database**: Read replicas for reporting
-2. **Caching**: Redis for session and frequently accessed data
-3. **File Storage**: CDN for static assets
-4. **Background Jobs**: Queue system for long-running tasks
-5. **Horizontal Scaling**: Stateless application servers
-6. **Monitoring**: APM tools for performance tracking
+1. **Database**: Azure Database for PostgreSQL with read replicas
+2. **Caching**: Azure Cache for Redis for session and frequently accessed data
+3. **File Storage**: Azure CDN for static assets and media files
+4. **Background Jobs**: Bull queue with Redis backend (Azure Cache for Redis)
+5. **Horizontal Scaling**: 
+   - Azure App Service auto-scaling
+   - Stateless application design
+   - Azure Load Balancer for traffic distribution
+6. **Monitoring**: 
+   - Azure Application Insights for APM
+   - Azure Monitor for infrastructure metrics
+   - Custom dashboards in Grafana
 
 ## Success Metrics
 
