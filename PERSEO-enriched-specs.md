@@ -89,7 +89,6 @@ interface GroupMembership {
 - Group hierarchies support unlimited nesting levels
 - All group membership changes are logged with timestamp and user
 - Duplicate person detection based on email/nationalId
-- GDPR compliance: Right to be forgotten, data export capabilities
 
 ### 2. Academic Control Module
 
@@ -212,13 +211,41 @@ interface InvoiceLineItem {
 }
 ```
 
+##### BillingProfile
+```typescript
+interface BillingProfile {
+  id: UUID;
+  name: string;
+  description?: string;
+  amount: Money;
+  frequency: 'MONTHLY' | 'QUARTERLY' | 'ANNUALLY';
+  scope: {
+    type: 'DEFAULT' | 'GROUP' | 'PERSON';
+    referenceId?: UUID; // Group ID or Person ID
+  };
+  priority: number; // Higher number = higher priority
+  conditions?: BillingCondition[]; // e.g., financial hardship, scholarship
+  validFrom: Date;
+  validTo?: Date;
+  isActive: boolean;
+  createdBy: UUID;
+  reason?: string; // For audit trail, especially for exceptions
+}
+
+interface BillingCondition {
+  type: 'FINANCIAL_HARDSHIP' | 'SCHOLARSHIP' | 'EMPLOYEE' | 'CUSTOM';
+  parameters?: Record<string, any>;
+}
+```
+
 ##### RecurringCharge
 ```typescript
 interface RecurringCharge {
   id: UUID;
   personId: UUID;
+  billingProfileId: UUID; // References the applicable BillingProfile
   description: string;
-  amount: Money;
+  amount: Money; // Calculated from BillingProfile
   frequency: 'MONTHLY' | 'QUARTERLY' | 'ANNUALLY';
   startDate: Date;
   endDate?: Date;
@@ -228,6 +255,14 @@ interface RecurringCharge {
     type: 'GROUP_MEMBERSHIP' | 'SUBSCRIPTION' | 'OTHER';
     referenceId: UUID;
   };
+  appliedProfileHistory: ProfileApplication[]; // Track which profiles were applied
+}
+
+interface ProfileApplication {
+  billingProfileId: UUID;
+  appliedAt: Date;
+  amount: Money;
+  reason?: string;
 }
 ```
 
@@ -237,6 +272,42 @@ interface RecurringCharge {
 - Support for partial payments and payment plans
 - Integration-ready for payment gateways (Stripe, PayPal, etc.)
 - Automatic email reminders for overdue invoices
+
+##### Billing Profile Precedence Rules
+When determining the applicable charge for a person, the system evaluates billing profiles in the following precedence order (highest to lowest):
+
+1. **Person-specific profile** (priority 1000+): Individual exceptions for financial hardship or special circumstances
+2. **Subgroup profile** (priority 100-999): Specific rates for subgroups (e.g., "students" within "members")
+3. **Group profile** (priority 10-99): Standard rates for group memberships (e.g., "members")
+4. **Default profile** (priority 0-9): Fallback rates when no specific profile applies
+
+##### Billing Examples
+
+**Scenario 1: Standard Member**
+- Person belongs to "members" group
+- Applicable profile: Group profile for "members" ($30/month)
+- Result: $30 monthly charge
+
+**Scenario 2: Student Member**
+- Person belongs to "members" group AND "students" subgroup
+- Applicable profiles: 
+  - Group profile for "members" ($30/month, priority 10)
+  - Group profile for "students" ($20/month, priority 50)
+- Result: $20 monthly charge (higher priority wins)
+
+**Scenario 3: Financial Hardship Exception**
+- Person belongs to "members" group with financial hardship
+- Applicable profiles:
+  - Group profile for "members" ($30/month, priority 10)
+  - Person-specific profile ($15/month, priority 1000, condition: FINANCIAL_HARDSHIP)
+- Result: $15 monthly charge (highest priority)
+
+##### Billing Profile Management
+- All billing profile changes require approval and audit trail
+- Profiles can have validity periods (e.g., 6-month financial hardship exception)
+- Historical tracking of which profiles were applied to each charge
+- Automatic expiration handling with notifications
+
 
 ### 4. Financial Module - Accounts Payable
 
