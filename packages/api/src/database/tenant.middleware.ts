@@ -11,7 +11,7 @@ export class TenantMiddleware implements NestMiddleware {
     @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
-  async use(req: Request, res: Response, next: NextFunction) {
+  async use(req: Request, _res: Response, next: NextFunction) {
     const tenantId = this.tenantService.getTenantFromRequest(req);
     
     if (!tenantId) {

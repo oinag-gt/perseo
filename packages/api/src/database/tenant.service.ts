@@ -13,7 +13,7 @@ export interface TenantInfo {
 export class TenantService {
   private tenant: TenantInfo | null = null;
 
-  constructor(@Inject(REQUEST) private readonly request: Request) {}
+  constructor(@Inject(REQUEST) _request: Request) {}
 
   setTenant(tenant: TenantInfo): void {
     this.tenant = tenant;

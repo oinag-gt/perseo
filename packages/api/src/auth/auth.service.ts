@@ -7,7 +7,6 @@ import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
 import { TenantService } from '../database/tenant.service';
 
 @Injectable()
