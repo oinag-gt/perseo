@@ -7,29 +7,42 @@ This document outlines the detailed implementation plan for PERSEO - Platform fo
 ## Prerequisites Required Before Starting
 
 ### 1. Azure Account Setup
-- [ ] Azure subscription with NGO discount activated
-- [ ] Resource group created for PERSEO project
-- [ ] Azure DevOps project (optional, for CI/CD)
-- [ ] Budget alerts configured
+- [x] Azure subscription with NGO discount activated
+     - Subscription ID: 70f5d29c-cf49-4846-b1ed-7eab40b83d74
+
+- [x] Resource group created for PERSEO project
+     - Resource group name: perseo
+
+- [x] Azure DevOps project (optional, for CI/CD)
+     - I want to deploy via Github Actions
+
+- [x] Budget alerts configured
 
 ### 2. Development Environment
-- [ ] Node.js 20 LTS installed
-- [ ] PostgreSQL 15+ installed locally or Docker setup
+- [x] Node.js 20 LTS installed
+- [x] PostgreSQL 15+ installed locally or Docker setup
 - [ ] Redis installed locally or Docker setup
-- [ ] VS Code or preferred IDE with TypeScript support
-- [ ] Git configured with SSH keys for GitHub
+- [x] VS Code or preferred IDE with TypeScript support
+- [x] Git configured with SSH keys for GitHub
 
 ### 3. Third-Party Services
-- [ ] GitHub organization access (oinag-gt)
-- [ ] Domain name for the application (e.g., perseo.app)
-- [ ] SSL certificates (can use Let's Encrypt)
-- [ ] SMTP credentials for Outlook/Office 365
-- [ ] Stripe or preferred payment gateway account (for Phase 3)
+- [x] GitHub organization access (oinag-gt)
+- [x] Domain name for the application (e.g., perseo.app)
+     - For now we will use "neftis.io"
+- [x] SSL certificates (can use Let's Encrypt)
+     - Help me setup this for me
+- [x] SMTP credentials for Outlook/Office 365
+     - I got them 
+- [x] Stripe or preferred payment gateway account (for Phase 3)
+     - We will setup that later
 
 ### 4. Design Assets
-- [ ] Logo and branding guidelines
-- [ ] Color palette and typography choices
-- [ ] UI/UX mockups or wireframes (optional but recommended)
+- [x] Logo and branding guidelines
+     - use generic logo and branding guideline for now
+- [x] Color palette and typography choices
+     - Use generic defaults
+- [x] UI/UX mockups or wireframes (optional but recommended)
+     - Use professional generic ones
 
 ### 5. Business Information
 - [ ] List of initial groups (e.g., members, students, instructors)

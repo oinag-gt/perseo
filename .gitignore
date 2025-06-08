@@ -154,6 +154,8 @@ dist/
 *.sqlite3
 *.db
 
-# Ignore the separate frontend and backend folders (using monorepo structure)
-perseo-backend/
-perseo-frontend/
+# Turbo
+.turbo/
+
+# Docker
+.docker/
