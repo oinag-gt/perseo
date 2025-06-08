@@ -516,7 +516,7 @@ interface ModuleAccess {
 #### Infrastructure (Azure-based)
 - **Authentication**: Custom JWT implementation with bcrypt (migration path to Azure AD B2C)
 - **File Storage**: Azure Blob Storage
-- **Email**: Azure Communication Services or SendGrid
+- **Email**: SMTP with organizational Outlook account (Azure Communication Services as scaling option)
 - **Monitoring**: Azure Application Insights + Grafana
 - **CI/CD**: GitHub Actions with Azure DevOps integration
 - **Hosting**: 
