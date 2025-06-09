@@ -5,3 +5,4 @@ export * from './common';
 export * from './person';
 export * from './group';
 export * from './document';
+export * from './academic';

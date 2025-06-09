@@ -4,3 +4,4 @@ export * from './common.schema';
 export * from './person.schema';
 export * from './group.schema';
 export * from './document.schema';
+export * from './academic.schema';

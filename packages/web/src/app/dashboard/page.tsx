@@ -93,8 +93,9 @@ function DashboardContent() {
               </div>
             </div>
 
-            {/* Academic Module (Coming Soon) */}
-            <div className="bg-white rounded-lg shadow p-6 opacity-60">
+            {/* Academic Module */}
+            <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                 onClick={() => window.location.href = '/dashboard/academic'}>
               <div className="flex items-center mb-4">
                 <div className="bg-purple-100 p-3 rounded-lg">
                   <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,14 +104,14 @@ function DashboardContent() {
                 </div>
                 <div className="ml-4">
                   <h3 className="text-lg font-semibold text-gray-900">Academic</h3>
-                  <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">Phase 3</span>
+                  <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Available</span>
                 </div>
               </div>
               <p className="text-gray-600 text-sm mb-4">
                 Course management, enrollments, attendance tracking, and grading system.
               </p>
-              <div className="text-gray-400 text-sm font-medium">
-                Coming soon...
+              <div className="text-purple-600 text-sm font-medium">
+                Click to access →
               </div>
             </div>
 

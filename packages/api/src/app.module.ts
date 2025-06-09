@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
 import { EmailModule } from './email/email.module';
 import { PeopleModule } from './people/people.module';
+import { AcademicModule } from './academic/academic.module';
 import configuration from './config/configuration';
 import { TenantMiddleware } from './database/tenant.middleware';
 
@@ -52,6 +53,7 @@ import { TenantMiddleware } from './database/tenant.middleware';
     EmailModule,
     AuthModule,
     PeopleModule,
+    AcademicModule,
   ],
 })
 export class AppModule implements NestModule {
