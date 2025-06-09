@@ -1,27 +1,33 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
   UseGuards,
   Request,
   HttpCode,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { LocalAuthGuard } from './guards/local-auth.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
+import { EmailService } from '../email/email.service';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly emailService: EmailService,
+  ) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
@@ -37,18 +43,32 @@ export class AuthController {
     };
   }
 
-  @UseGuards(LocalAuthGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User login' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async login(@Request() req: any, @Body() _loginDto: LoginDto) {
-    return this.authService.login(
-      req.user,
-      req.headers['user-agent'],
-      req.ip,
-    );
+  async login(@Request() req: any, @Body() loginDto: LoginDto) {
+    try {
+      console.log('Login controller called with email:', loginDto.email);
+      
+      const user = await this.authService.validateUser(loginDto.email, loginDto.password);
+      
+      if (!user) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+
+      const result = await this.authService.login(
+        user,
+        req.headers['user-agent'],
+        req.ip,
+      );
+      console.log('Login successful for user:', user.email);
+      return result;
+    } catch (error) {
+      console.error('Login controller error:', error);
+      throw error;
+    }
   }
 
   @Post('refresh')
@@ -109,5 +129,46 @@ export class AuthController {
   async resendVerification(@Body() resendVerificationDto: ResendVerificationDto) {
     await this.authService.resendVerificationEmail(resendVerificationDto.email);
     return { message: 'Verification email sent' };
+  }
+
+  @Post('test-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Test SMTP connection and send test email' })
+  async testEmail(@Body() body: { email: string }) {
+    try {
+      const connectionTest = await this.emailService.testConnection();
+      if (!connectionTest) {
+        return { success: false, message: 'SMTP connection failed' };
+      }
+      
+      await this.emailService.sendEmail({
+        to: body.email,
+        subject: 'PERSEO SMTP Test',
+        html: '<h1>Test Email</h1><p>If you receive this, SMTP is working!</p>',
+        text: 'Test Email - If you receive this, SMTP is working!',
+      });
+      
+      return { success: true, message: 'Test email sent successfully' };
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('profile')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({ status: 200, description: 'User profile data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getProfile(@Request() req: any) {
+    return {
+      id: req.user.id,
+      email: req.user.email,
+      firstName: req.user.firstName,
+      lastName: req.user.lastName,
+      role: req.user.role,
+      emailVerified: req.user.emailVerified,
+      tenantId: req.user.tenantId,
+    };
   }
 }

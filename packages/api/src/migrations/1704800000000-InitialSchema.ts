@@ -7,9 +7,9 @@ export class InitialSchema1704800000000 implements MigrationInterface {
     // Enable UUID extension
     await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
     
-    // Create tenants table
+    // Create tenants table if it doesn't exist
     await queryRunner.query(`
-      CREATE TABLE "tenants" (
+      CREATE TABLE IF NOT EXISTS "tenants" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
         "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
@@ -32,16 +32,23 @@ export class InitialSchema1704800000000 implements MigrationInterface {
       )
     `);
     
-    // Create indexes for tenants
-    await queryRunner.query(`CREATE INDEX "IDX_tenants_subdomain" ON "tenants" ("subdomain")`);
-    await queryRunner.query(`CREATE INDEX "IDX_tenants_isActive" ON "tenants" ("isActive")`);
+    // Create indexes for tenants if they don't exist
+    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_tenants_subdomain" ON "tenants" ("subdomain")`);
+    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_tenants_isActive" ON "tenants" ("isActive")`);
     
-    // Create users_roles_enum
-    await queryRunner.query(`CREATE TYPE "public"."users_roles_enum" AS ENUM('super_admin', 'tenant_admin', 'instructor', 'student', 'member')`);
+    // Create users_roles_enum if it doesn't exist
+    await queryRunner.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'users_roles_enum') THEN
+          CREATE TYPE "public"."users_roles_enum" AS ENUM('super_admin', 'tenant_admin', 'instructor', 'student', 'member');
+        END IF;
+      END$$;
+    `);
     
     // Create users table
     await queryRunner.query(`
-      CREATE TABLE "users" (
+      CREATE TABLE IF NOT EXISTS "users" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
         "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
@@ -68,12 +75,12 @@ export class InitialSchema1704800000000 implements MigrationInterface {
     `);
     
     // Create indexes for users
-    await queryRunner.query(`CREATE INDEX "IDX_users_email" ON "users" ("email")`);
-    await queryRunner.query(`CREATE INDEX "IDX_users_tenantId" ON "users" ("tenantId")`);
+    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_users_email" ON "users" ("email")`);
+    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_users_tenantId" ON "users" ("tenantId")`);
     
     // Create refresh_tokens table
     await queryRunner.query(`
-      CREATE TABLE "refresh_tokens" (
+      CREATE TABLE IF NOT EXISTS "refresh_tokens" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
         "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
@@ -89,11 +96,11 @@ export class InitialSchema1704800000000 implements MigrationInterface {
     `);
     
     // Create indexes for refresh_tokens
-    await queryRunner.query(`CREATE INDEX "IDX_refresh_tokens_token" ON "refresh_tokens" ("token")`);
+    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_refresh_tokens_token" ON "refresh_tokens" ("token")`);
     
     // Create audit_logs table
     await queryRunner.query(`
-      CREATE TABLE "audit_logs" (
+      CREATE TABLE IF NOT EXISTS "audit_logs" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "tenantId" uuid,
         "userId" uuid,
@@ -110,15 +117,38 @@ export class InitialSchema1704800000000 implements MigrationInterface {
     `);
     
     // Create indexes for audit_logs
-    await queryRunner.query(`CREATE INDEX "IDX_audit_logs_tenantId" ON "audit_logs" ("tenantId")`);
-    await queryRunner.query(`CREATE INDEX "IDX_audit_logs_userId" ON "audit_logs" ("userId")`);
-    await queryRunner.query(`CREATE INDEX "IDX_audit_logs_createdAt" ON "audit_logs" ("createdAt")`);
+    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_audit_logs_tenantId" ON "audit_logs" ("tenantId")`);
+    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_audit_logs_userId" ON "audit_logs" ("userId")`);
+    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_audit_logs_createdAt" ON "audit_logs" ("createdAt")`);
     
-    // Add foreign keys
-    await queryRunner.query(`ALTER TABLE "users" ADD CONSTRAINT "FK_users_tenantId" FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-    await queryRunner.query(`ALTER TABLE "refresh_tokens" ADD CONSTRAINT "FK_refresh_tokens_userId" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-    await queryRunner.query(`ALTER TABLE "audit_logs" ADD CONSTRAINT "FK_audit_logs_tenantId" FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-    await queryRunner.query(`ALTER TABLE "audit_logs" ADD CONSTRAINT "FK_audit_logs_userId" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+    // Add foreign keys if they don't exist
+    await queryRunner.query(`
+      DO $$ 
+      BEGIN
+        -- First check if tenantId column needs to be converted to uuid
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'users' 
+          AND column_name = 'tenantId' 
+          AND data_type = 'character varying'
+        ) THEN
+          ALTER TABLE "users" ALTER COLUMN "tenantId" TYPE uuid USING "tenantId"::uuid;
+        END IF;
+        
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'FK_users_tenantId') THEN
+          ALTER TABLE "users" ADD CONSTRAINT "FK_users_tenantId" FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'FK_refresh_tokens_userId') THEN
+          ALTER TABLE "refresh_tokens" ADD CONSTRAINT "FK_refresh_tokens_userId" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'FK_audit_logs_tenantId') THEN
+          ALTER TABLE "audit_logs" ADD CONSTRAINT "FK_audit_logs_tenantId" FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'FK_audit_logs_userId') THEN
+          ALTER TABLE "audit_logs" ADD CONSTRAINT "FK_audit_logs_userId" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION;
+        END IF;
+      END$$;
+    `);
     
     // Create function for updating updatedAt timestamp
     await queryRunner.query(`
@@ -131,10 +161,21 @@ export class InitialSchema1704800000000 implements MigrationInterface {
       $$ language 'plpgsql';
     `);
     
-    // Create triggers for updatedAt
-    await queryRunner.query(`CREATE TRIGGER update_tenants_updated_at BEFORE UPDATE ON "tenants" FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column()`);
-    await queryRunner.query(`CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON "users" FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column()`);
-    await queryRunner.query(`CREATE TRIGGER update_refresh_tokens_updated_at BEFORE UPDATE ON "refresh_tokens" FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column()`);
+    // Create triggers for updatedAt if they don't exist
+    await queryRunner.query(`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_tenants_updated_at') THEN
+          CREATE TRIGGER update_tenants_updated_at BEFORE UPDATE ON "tenants" FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_users_updated_at') THEN
+          CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON "users" FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_refresh_tokens_updated_at') THEN
+          CREATE TRIGGER update_refresh_tokens_updated_at BEFORE UPDATE ON "refresh_tokens" FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+        END IF;
+      END$$;
+    `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

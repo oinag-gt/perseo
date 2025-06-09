@@ -55,60 +55,81 @@ export class AuthService {
 
     const savedUser = await this.userRepository.save(user);
     
-    // Send verification email
-    await this.emailService.sendVerificationEmail(
-      savedUser.email,
-      emailVerificationToken,
-      savedUser.firstName,
-    );
+    // Send verification email (non-blocking - don't fail registration if email fails)
+    try {
+      await this.emailService.sendVerificationEmail(
+        savedUser.email,
+        emailVerificationToken,
+        savedUser.firstName,
+      );
+      console.log('Verification email sent successfully');
+    } catch (error) {
+      console.error('Failed to send verification email:', error instanceof Error ? error.message : 'Unknown error');
+      // Don't throw error - user is still registered even if email fails
+    }
     
     return savedUser;
   }
 
   async validateUser(email: string, password: string): Promise<User | null> {
-    const user = await this.userRepository.findOne({ where: { email } });
+    try {
+      const user = await this.userRepository.findOne({ where: { email } });
 
-    if (!user || !user.isActive) {
-      return null;
+      if (!user || !user.isActive) {
+        return null;
+      }
+
+      if (user.isLocked()) {
+        throw new UnauthorizedException('Account is locked');
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+
+      if (!isPasswordValid) {
+        await this.handleFailedLogin(user);
+        return null;
+      }
+
+      await this.handleSuccessfulLogin(user);
+      return user;
+    } catch (error) {
+      console.error('Error in validateUser:', error);
+      throw error;
     }
-
-    if (user.isLocked()) {
-      throw new UnauthorizedException('Account is locked');
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-      await this.handleFailedLogin(user);
-      return null;
-    }
-
-    await this.handleSuccessfulLogin(user);
-    return user;
   }
 
   async login(user: User, userAgent?: string, ipAddress?: string) {
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      roles: user.roles,
-      tenantId: user.tenantId,
-    };
-
-    const accessToken = this.jwtService.sign(payload);
-    const refreshToken = await this.createRefreshToken(user, userAgent, ipAddress);
-
-    return {
-      accessToken,
-      refreshToken: refreshToken.token,
-      user: {
-        id: user.id,
+    try {
+      const payload = {
+        sub: user.id,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
         roles: user.roles,
-      },
-    };
+        emailVerified: user.isEmailVerified,
+        tenantId: user.tenantId,
+      };
+
+      const accessToken = this.jwtService.sign(payload);
+      const refreshToken = await this.createRefreshToken(user, userAgent, ipAddress);
+
+      return {
+        accessToken,
+        refreshToken: refreshToken.token,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.roles && user.roles.length > 0 ? user.roles[0] : 'member',
+          emailVerified: user.isEmailVerified,
+          tenantId: user.tenantId,
+        },
+      };
+    } catch (error) {
+      console.error('Error in login method:', error);
+      throw error;
+    }
   }
 
   async refreshAccessToken(refreshTokenStr: string) {
@@ -124,7 +145,10 @@ export class AuthService {
     const payload = {
       sub: refreshToken.user.id,
       email: refreshToken.user.email,
+      firstName: refreshToken.user.firstName,
+      lastName: refreshToken.user.lastName,
       roles: refreshToken.user.roles,
+      emailVerified: refreshToken.user.isEmailVerified,
       tenantId: refreshToken.user.tenantId,
     };
 
@@ -145,26 +169,40 @@ export class AuthService {
     userAgent?: string,
     ipAddress?: string,
   ): Promise<RefreshToken> {
-    const token = this.jwtService.sign(
-      { sub: user.id },
-      {
-        secret: this.configService.get('jwt.refreshSecret'),
-        expiresIn: this.configService.get('jwt.refreshExpiresIn'),
-      },
-    );
+    try {
+      console.log('Creating refresh token for user:', user.id);
+      
+      const token = this.jwtService.sign(
+        { sub: user.id },
+        {
+          secret: this.configService.get('jwt.refreshSecret'),
+          expiresIn: this.configService.get('jwt.refreshExpiresIn'),
+        },
+      );
+      
+      console.log('JWT refresh token created');
 
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30);
 
-    const refreshToken = this.refreshTokenRepository.create({
-      token,
-      user,
-      expiresAt,
-      userAgent,
-      ipAddress,
-    });
+      const refreshToken = this.refreshTokenRepository.create({
+        token,
+        user,
+        expiresAt,
+        userAgent,
+        ipAddress,
+      });
+      
+      console.log('Refresh token entity created');
 
-    return this.refreshTokenRepository.save(refreshToken);
+      const savedToken = await this.refreshTokenRepository.save(refreshToken);
+      console.log('Refresh token saved to database');
+      
+      return savedToken;
+    } catch (error) {
+      console.error('Error in createRefreshToken:', error);
+      throw error;
+    }
   }
 
   private async handleFailedLogin(user: User): Promise<void> {
@@ -181,8 +219,9 @@ export class AuthService {
 
   private async handleSuccessfulLogin(user: User): Promise<void> {
     user.failedLoginAttempts = 0;
-    user.lockedUntil = null;
+    user.lockedUntil = undefined;
     user.lastLoginAt = new Date();
+    user.lastLoginIp = undefined;
     await this.userRepository.save(user);
   }
 

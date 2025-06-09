@@ -9,6 +9,8 @@ import { User } from './entities/user.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { DatabaseModule } from '../database/database.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         },
       }),
     }),
+    DatabaseModule,
+    EmailModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JwtStrategy],

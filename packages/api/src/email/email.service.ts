@@ -15,15 +15,33 @@ export class EmailService {
   private transporter: Transporter;
 
   constructor(private configService: ConfigService) {
-    this.transporter = nodemailer.createTransport({
+    const smtpConfig = {
       host: this.configService.get('email.host'),
       port: this.configService.get('email.port'),
-      secure: this.configService.get('email.secure'),
+      secure: this.configService.get('email.secure'), // true for 465, false for other ports
       auth: {
         user: this.configService.get('email.auth.user'),
         pass: this.configService.get('email.auth.pass'),
       },
+      tls: {
+        rejectUnauthorized: false,
+      },
+      // Additional options for Outlook/Office 365
+      authMethod: 'PLAIN',
+      connectionTimeout: 30000,
+      greetingTimeout: 30000,
+      socketTimeout: 30000,
+    };
+
+    console.log('SMTP Configuration:', {
+      host: smtpConfig.host,
+      port: smtpConfig.port,
+      secure: smtpConfig.secure,
+      user: smtpConfig.auth.user ? '***@' + smtpConfig.auth.user.split('@')[1] : 'NOT_SET',
+      pass: smtpConfig.auth.pass ? 'SET' : 'NOT_SET',
     });
+
+    this.transporter = nodemailer.createTransport(smtpConfig);
   }
 
   async sendEmail(options: EmailOptions): Promise<void> {
@@ -36,10 +54,34 @@ export class EmailService {
     };
 
     try {
-      await this.transporter.sendMail(mailOptions);
+      console.log('Attempting to send email to:', options.to);
+      console.log('Email from:', mailOptions.from);
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log('Email sent successfully:', result.messageId);
     } catch (error) {
-      console.error('Email send error:', error);
+      console.error('Email send error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        code: (error as any).code,
+        response: (error as any).response,
+        responseCode: (error as any).responseCode,
+      });
       throw new Error('Failed to send email');
+    }
+  }
+
+  async testConnection(): Promise<boolean> {
+    try {
+      console.log('Testing SMTP connection...');
+      await this.transporter.verify();
+      console.log('SMTP connection successful');
+      return true;
+    } catch (error) {
+      console.error('SMTP connection test failed:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        code: (error as any).code,
+        response: (error as any).response,
+      });
+      return false;
     }
   }
 

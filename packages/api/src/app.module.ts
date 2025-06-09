@@ -13,7 +13,11 @@ import { TenantMiddleware } from './database/tenant.middleware';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
-      envFilePath: ['.env.local', '.env'],
+      envFilePath: [
+        '../../.env.local', // Root .env.local
+        '.env.local',       // Local .env.local
+        '.env',             // Local .env
+      ],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -26,10 +30,10 @@ import { TenantMiddleware } from './database/tenant.middleware';
         password: configService.get('database.password'),
         database: configService.get('database.name'),
         autoLoadEntities: true,
-        synchronize: false, // We'll use migrations instead
+        synchronize: configService.get('NODE_ENV') === 'development', // Use synchronize in dev for now
         logging: configService.get('NODE_ENV') === 'development',
-        migrations: [__dirname + '/migrations/*{.ts,.js}'],
-        migrationsRun: true, // Run migrations automatically in development
+        // migrations: [__dirname + '/migrations/*{.ts,.js}'],
+        // migrationsRun: true, // Run migrations automatically in development
       }),
     }),
     BullModule.forRootAsync({
