@@ -1,0 +1,20 @@
+# <type>(<scope>): <subject>
+#
+# <body>
+#
+# <footer>
+
+# Type: feat, fix, docs, style, refactor, test, chore, ci, perf, revert
+# Scope: auth, api, web, db, email, config, deps
+# Subject: imperative, no period, under 72 chars
+#
+# Examples:
+# feat(auth): add email verification for new users
+# fix(api): resolve user session timeout issue
+# docs(readme): update installation instructions
+# refactor(auth): simplify JWT token validation
+# test(api): add integration tests for user endpoints
+# chore(deps): update NestJS to v11
+#
+# Body: explain the what and why, not how (optional)
+# Footer: reference issues, breaking changes (optional)
