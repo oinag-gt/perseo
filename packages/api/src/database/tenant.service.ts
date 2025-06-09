@@ -27,6 +27,13 @@ export class TenantService {
     return this.tenant?.schema || 'public';
   }
 
+  getCurrentTenantId(): string {
+    if (!this.tenant?.id) {
+      throw new Error('No tenant context available');
+    }
+    return this.tenant.id;
+  }
+
   getTenantFromRequest(request: Request): string | null {
     const hostname = request.hostname;
     const subdomain = hostname.split('.')[0];

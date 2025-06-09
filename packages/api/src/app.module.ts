@@ -5,6 +5,7 @@ import { BullModule } from '@nestjs/bull';
 import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
 import { EmailModule } from './email/email.module';
+import { PeopleModule } from './people/people.module';
 import configuration from './config/configuration';
 import { TenantMiddleware } from './database/tenant.middleware';
 
@@ -50,6 +51,7 @@ import { TenantMiddleware } from './database/tenant.middleware';
     DatabaseModule,
     EmailModule,
     AuthModule,
+    PeopleModule,
   ],
 })
 export class AppModule implements NestModule {
