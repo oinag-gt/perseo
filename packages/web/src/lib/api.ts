@@ -152,3 +152,30 @@ export const peopleApi = {
   
   getPersonMemberships: (personId: string) => api.get(`/people/memberships/person/${personId}`),
 }
+
+// Separate exports for better organization
+export const groupsApi = {
+  getGroups: peopleApi.getGroups,
+  getGroup: peopleApi.getGroup,
+  createGroup: peopleApi.createGroup,
+  updateGroup: peopleApi.updateGroup,
+  deleteGroup: peopleApi.deleteGroup,
+  getGroupHierarchy: peopleApi.getGroupHierarchy,
+  getGroupMembers: peopleApi.getGroupMembers,
+  getActiveGroupMembers: peopleApi.getActiveGroupMembers,
+  addGroupMember: peopleApi.addGroupMember,
+  updateGroupMember: peopleApi.updateGroupMember,
+  removeGroupMember: peopleApi.removeGroupMember,
+}
+
+export const membershipsApi = {
+  getMemberships: peopleApi.getMemberships,
+  getMembership: peopleApi.getMembership,
+  createMembership: peopleApi.createMembership,
+  updateMembership: peopleApi.updateMembership,
+  deleteMembership: peopleApi.deleteMembership,
+  endMembership: peopleApi.endMembership,
+  suspendMembership: peopleApi.suspendMembership,
+  reactivateMembership: peopleApi.reactivateMembership,
+  getPersonMemberships: peopleApi.getPersonMemberships,
+}
