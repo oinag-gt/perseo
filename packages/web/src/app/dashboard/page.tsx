@@ -45,7 +45,7 @@ function DashboardContent() {
                 Dashboard Coming Soon
               </h2>
               <p className="text-gray-600 mb-6">
-                This is a protected route. You can only see this if you're authenticated.
+                This is a protected route. You can only see this if you&apos;re authenticated.
               </p>
               
               <div className="bg-blue-50 rounded-lg p-4 mb-6">

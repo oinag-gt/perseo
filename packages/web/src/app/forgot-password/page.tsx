@@ -31,8 +31,8 @@ export default function ForgotPasswordPage() {
 
       setSuccess(true);
       setEmail('');
-    } catch (err: any) {
-      setError(err.message || 'An error occurred');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
@@ -46,14 +46,14 @@ export default function ForgotPasswordPage() {
             Reset your password
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Enter your email address and we'll send you a link to reset your password.
+            Enter your email address and we&apos;ll send you a link to reset your password.
           </p>
         </div>
 
         {success ? (
           <div className="rounded-md bg-green-50 p-4 text-center">
             <div className="text-sm text-green-800 mb-4">
-              If an account with that email exists, we've sent you a password reset link.
+              If an account with that email exists, we&apos;ve sent you a password reset link.
             </div>
             <Link
               href="/login"
