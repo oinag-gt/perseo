@@ -41,6 +41,48 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const isAuthenticated = !!user;
 
+  const refreshToken = async () => {
+    const refresh = localStorage.getItem('refreshToken');
+    if (!refresh) {
+      throw new Error('No refresh token available');
+    }
+
+    const response = await fetch('http://localhost:3001/api/v1/auth/refresh', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken: refresh }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      // Refresh token is invalid, redirect to login
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      setUser(null);
+      throw new Error('Session expired');
+    }
+
+    // Update tokens
+    localStorage.setItem('accessToken', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
+
+    // Get updated user data (avoiding circular dependency)
+    const token = data.accessToken;
+    const profileResponse = await fetch('http://localhost:3001/api/v1/auth/profile', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (profileResponse.ok) {
+      const userData = await profileResponse.json();
+      setUser(userData);
+    }
+  };
+
   // Check for existing auth on mount
   const checkAuth = useCallback(async () => {
     try {
@@ -142,37 +184,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // So we don't automatically log them in here
   };
 
-  const refreshToken = async () => {
-    const refresh = localStorage.getItem('refreshToken');
-    if (!refresh) {
-      throw new Error('No refresh token available');
-    }
-
-    const response = await fetch('http://localhost:3001/api/v1/auth/refresh', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ refreshToken: refresh }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      // Refresh token is invalid, redirect to login
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      setUser(null);
-      throw new Error('Session expired');
-    }
-
-    // Update tokens
-    localStorage.setItem('accessToken', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
-
-    // Get updated user data
-    await checkAuth();
-  };
 
   const value = {
     user,
