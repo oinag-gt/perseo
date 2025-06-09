@@ -27,6 +27,14 @@ export class TenantService {
     return this.tenant?.schema || 'public';
   }
 
+  getCurrentTenantId(): string {
+    if (!this.tenant?.id) {
+      // For development: return a default tenant ID (UUID format)
+      return '00000000-0000-0000-0000-000000000001';
+    }
+    return this.tenant.id;
+  }
+
   getTenantFromRequest(request: Request): string | null {
     const hostname = request.hostname;
     const subdomain = hostname.split('.')[0];

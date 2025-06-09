@@ -19,8 +19,11 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "strictPropertyInitialization": false,
+    "moduleResolution": "node",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@perseo/shared": ["../shared/src"],
+      "@perseo/shared/*": ["../shared/src/*"]
     }
   },
   "include": ["src/**/*"],
