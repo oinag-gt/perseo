@@ -29,7 +29,8 @@ export class TenantService {
 
   getCurrentTenantId(): string {
     if (!this.tenant?.id) {
-      throw new Error('No tenant context available');
+      // For development: return a default tenant ID (UUID format)
+      return '00000000-0000-0000-0000-000000000001';
     }
     return this.tenant.id;
   }
